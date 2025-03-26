@@ -1,199 +1,255 @@
-# Supabase 세팅
+# Create
 
-## 1. `.env 파일 생성`
+## 실습 1.
 
-- `/.env.local` 파일 생성
-- `/.env.production` 파일 생성
-
-```env
-NEXT_PUBLIC_SUPABASE_ID=
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-NEXT_PUBLIC_STORAGE_BUCKET=
-
-SUPABASE_DB_PASSWORD=
-SUPABASE_SERVICE_ROLE=
-SITE_URL=http://localhost:3000
-```
-
-## 2. 계정 생성
-
-- https://supabase.com/
-- GitHub 연동 실행
-- .env 내용 작성
-
-## 3. 테이블 생성
-
-- `public.todos` 생성
-- id, title, content 생성
-- RLS 해제함
-
-## 4. Supabase CLI 설치
-
-- https://supabase.com/docs/guides/api/rest/generating-types
+- shadcn/ui Toast 컴포넌트 배치
+- https://ui.shadcn.com/docs/components/toast 제거됨
+- https://ui.shadcn.com/docs/components/sonner 사용
 
 ```bash
-npm i supabase@">=1.8.1" --save-dev --legacy-peer-deps
+npx shadcn@latest add sonner
 ```
 
-```bash
-npm i --save @supabase/ssr --legacy-peer-deps
-npm install @supabase/supabase-js --legacy-peer-deps
-```
+## 실습 2. Toast 적용하기
 
-- Supabase 로그인 후 실행
+- /src/app/layout.tsx에 적용
 
-```bash
-npx supabase login
-```
+```tsx
+import type { Metadata } from "next";
+import { Roboto } from "next/font/google";
+import "./globals.css";
+import SideNavigation from "@/components/common/navigation/SideNavigation";
+// shadcn/ui
+import { Toaster } from "@/components/ui/sonner";
 
-## 5. 테이블의 데이터 타입 자동으로 생성하기
+const roboto = Roboto({
+  variable: "--font-roboto",
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
+});
 
-- package.json 수정
+export const metadata: Metadata = {
+  title: "Todo",
+  description: "Todo Supabase",
+};
 
-```json
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "generate-types": "npx supabase gen types typescript --project-id 프로젝트아이디 --schema public > src/types/types_db.ts"
-  },
-```
-
-```bash
-npm run generate-types
-```
-
-- `/src/types/types_db.ts` 파일이 생성되었는지 확인
-
-## 6. Supabase 활용 관련 파일 생성
-
-- /src/lib 폴더를 기준
-- `/src/lib/supabase` 폴더 생성
-- `/src/lib/supabase/client.ts` 파일 생성
-
-```ts
-import { createBrowserClient } from "@supabase/ssr";
-import { Database } from "@/types/types_db";
-
-export function createClient() {
-  return createBrowserClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="ko">
+      <body className={`${roboto.variable}  antialiased`}>
+        <SideNavigation />
+        {children}
+        <Toaster />
+      </body>
+    </html>
   );
 }
 ```
 
-- `/src/lib/supabase/server.ts` 파일 생성
+## 실습 3. Toast 출력시키기
+
+- `/src/components/common/dialog/MarkdownDialog.tsx`
+
+```tsx
+// todo 작성
+const onSubmit = () => {
+  if (!title || !content) {
+    toast.error("입력 항목을 확인해주세요.", {
+      description: "제목과 내용을 입력해주세요.",
+      duration: 3000,
+    });
+    return;
+  }
+  toast.success("등록에 성공하였습니다.", {
+    description: "Supabase에 글이 등록되었습니다.",
+    duration: 3000,
+  });
+};
+```
+
+## 실습 4. Supabase 연동하기 - actions 생성
+
+- `/src/app/actions` 폴더 생성
+- `/src/app/actions/todos-action.ts` 파일 생성
 
 ```ts
 "use server";
+import { createServerSideClient } from "@/lib/supabase/server";
+import { Database } from "@/types/types_db";
+export type TodosRow = Database["public"]["Tables"]["todos"]["Row"];
+export type TodosRowInsert = Database["public"]["Tables"]["todos"]["Insert"];
+export type TodosRowUpdate = Database["public"]["Tables"]["todos"]["Update"];
+// Create 기능
+export async function createTodo(todos: TodosRowInsert) {
+  const supabase = await createServerSideClient();
+  const { data, error, status } = await supabase
+    .from("todos")
+    .insert([{ title: todos.title, content: todos.content }])
+    .select()
+    .single();
 
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
-
-export async function createServerSideClient() {
-  const cookieStore = await cookies();
-
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
-            // The `setAll` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
-          }
-        },
-      },
-    }
-  );
+  return { data, error, status };
 }
 ```
 
-- `/src/lib/supabase/middleware.ts` 파일 생성
+## 실습 5. 서버 액션 실행하기
 
-```ts
-import { createServerClient } from "@supabase/ssr";
-import { NextResponse, type NextRequest } from "next/server";
+- `/src/components/common/dialog/MarkdownDialog.tsx`
 
-export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  });
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({
-            request,
-          });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
-
-  // Do not run code between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
-
-  // IMPORTANT: DO NOT REMOVE auth.getUser()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/auth")
-  ) {
-    // no user, potentially respond by redirecting the user to the login page
-    const url = request.nextUrl.clone();
-    url.pathname = "/auth/login";
-    return NextResponse.redirect(url);
+```tsx
+// todo 작성
+const onSubmit = async () => {
+  if (!title || !content) {
+    toast.error("입력 항목을 확인해주세요.", {
+      description: "제목과 내용을 입력해주세요.",
+      duration: 3000,
+    });
+    return;
   }
 
-  // IMPORTANT: You *must* return the supabaseResponse object as it is.
-  // If you're creating a new response object with NextResponse.next() make sure to:
-  // 1. Pass the request in it, like so:
-  //    const myNewResponse = NextResponse.next({ request })
-  // 2. Copy over the cookies, like so:
-  //    myNewResponse.cookies.setAll(supabaseResponse.cookies.getAll())
-  // 3. Change the myNewResponse object to fit your needs, but avoid changing
-  //    the cookies!
-  // 4. Finally:
-  //    return myNewResponse
-  // If this is not done, you may be causing the browser and server to go out
-  // of sync and terminate the user's session prematurely!
-  console.log("supabaseResponse ========= ", supabaseResponse);
-  return supabaseResponse;
-}
+  // 서버액션 실행하기
+  const { data, error, status } = await createTodo({ title, content });
+  if (error) {
+    toast.error("등록에 실패하였습니다.", {
+      description: `Error ${error.message}`,
+      duration: 3000,
+    });
+    return;
+  }
+
+  toast.success("등록에 성공하였습니다.", {
+    description: "Supabase에 글이 등록되었습니다.",
+    duration: 3000,
+  });
+};
 ```
 
-## 7. Next.js에서 라우터 중간 처리 파일
+## 6. UI 수정(창닫기)
 
-- `/src/middleware.ts` 생성 : Next에서 역할이 정해진 파일명
-- 임시로 `/src/_middleware.ts`로 파일명을 변경
+- `/src/components/common/dialog/MarkdownDialog.tsx`
+
+```tsx
+"use client";
+
+// SCSS
+import styles from "@/components/common/dialog/MarkdownDialog.module.scss";
+import { Checkbox } from "@/components/ui/checkbox";
+
+// Markdown
+import MDEditor from "@uiw/react-md-editor";
+
+// shadcn/ui
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
+import LabelCalendar from "../calendar/LabelCalendar";
+import { useState } from "react";
+import { toast } from "sonner";
+import { createTodo } from "@/app/actions/todos-action";
+
+function MarkdownDialog() {
+  // 다이얼로그 Props
+  const [open, setOpen] = useState<boolean>(false);
+  // 에디터의 제목/본문 내용
+  const [title, setTitle] = useState<string | undefined>("");
+  const [content, setContent] = useState<string | undefined>("");
+
+  // todo 작성
+  const onSubmit = async () => {
+    if (!title || !content) {
+      toast.error("입력 항목을 확인해주세요.", {
+        description: "제목과 내용을 입력해주세요.",
+        duration: 3000,
+      });
+      return;
+    }
+
+    // 서버액션 실행하기
+    const { data, error, status } = await createTodo({ title, content });
+    if (error) {
+      toast.error("등록에 실패하였습니다.", {
+        description: `Error ${error.message}`,
+        duration: 3000,
+      });
+      return;
+    }
+    console.log("등록 상태", data, status);
+
+    toast.success("등록에 성공하였습니다.", {
+      description: "Supabase에 글이 등록되었습니다.",
+      duration: 3000,
+    });
+
+    // 창닫고 내용 초기화
+    setOpen(false);
+    setTitle("");
+    setContent("");
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <span className="font-normal flex justify-center w-full text-gray-400 hover:text-gray-500 cursor-pointer">
+          Add Content
+        </span>
+      </DialogTrigger>
+      <DialogContent className="max-w-fit min-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>
+            <div className={styles.dialog_titleBox}>
+              <Checkbox className="w-5 h-5" />
+              <input
+                type="text"
+                placeholder="Write a title for your board"
+                className={styles.dialog_titleBox_title}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </div>
+          </DialogTitle>
+          <div className={styles.dialog_calendarBox}>
+            <LabelCalendar label="From" required={false} />
+            <LabelCalendar label="To" required={false} />
+          </div>
+          <Separator />
+          {/* 마크다운 입력 영역 */}
+          <div className={styles.dialog_markdown}>
+            <MDEditor height={"100%"} value={content} onChange={setContent} />
+          </div>
+        </DialogHeader>
+        <DialogFooter>
+          <div className={styles.dialog_buttonBox}>
+            <Button
+              variant={"ghost"}
+              className="font-normal text-gray-400 hover:bg-gray-50 hover:text-gray-500"
+              onClick={() => setOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              className="font-normal border-orange-500 bg-orange-400 text-white hover:bg-orange-500 hover:text-white"
+              onClick={onSubmit}
+            >
+              Save
+            </Button>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export default MarkdownDialog;
+```
