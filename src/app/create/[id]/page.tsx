@@ -32,6 +32,27 @@ function Page() {
   const [contents, setContents] = useState<BoardContent[]>([]);
   const [startDate, setStartDate] = useState<string | Date>();
   const [endDate, setEndDate] = useState<string | Date>();
+
+  // 컨텐츠 데이터 업데이트 함수
+  const updateContent = async (newData: BoardContent) => {
+    console.log("최종전달", newData);
+
+    const newContentArr = contents.map((item) => {
+      if (item.boardId === newData.boardId) {
+        return newData;
+      }
+      return item;
+    });
+    // 서버에 Row를 업데이트
+    console.log(updateContent);
+    const { data, error, status } = await updateTodoId(
+      Number(id),
+      JSON.stringify(newContentArr)
+    );
+
+    fetchGetTodoId();
+  };
+
   // id에 해당하는 Row 데이터를 읽어오기
   const fetchGetTodoId = async () => {
     const { data, error, status } = await getTodoId(Number(id));
@@ -57,16 +78,19 @@ function Page() {
   };
 
   // 컨텐츠 추가하기
-  const onCreateContent = async () => {
+  const onCreateContent = async (newData?: BoardContent) => {
     // 기본으로 추가될 내용
-    const addContent: BoardContent = {
-      boardId: nanoid(),
-      title: "",
-      content: "",
-      startDate: new Date().toISOString(),
-      endDate: new Date().toISOString(),
-      isCompleted: false,
-    };
+    const addContent = newData
+      ? { ...newData }
+      : {
+          boardId: nanoid(),
+          title: "",
+          content: "",
+          startDate: new Date().toISOString(),
+          endDate: new Date().toISOString(),
+          isCompleted: false,
+        };
+
     const updateContent = [...contents, addContent];
     // 서버에 Row를 업데이트
     console.log(updateContent);
@@ -121,13 +145,23 @@ function Page() {
           {/* 캘린더 선택 추가 */}
           <div className={styles.calendarBox}>
             <div className={styles.calendarBox_calendar}>
-              <LabelCalendar label="From" required={false} />
-              <LabelCalendar label="To" required={true} />
+              <LabelCalendar
+                label="From"
+                selectedDate={startDate as Date}
+                onDateChange={setStartDate}
+                required={false}
+              />
+              <LabelCalendar
+                label="To"
+                selectedDate={endDate as Date}
+                onDateChange={setEndDate}
+                required={true}
+              />
             </div>
             <Button
               variant={"outline"}
               className="w-[15%] text-white bg-orange-400 border-orange-500 hover:bg-orange-400 hover:text-white cursor-pointer"
-              onClick={onCreateContent}
+              onClick={() => onCreateContent()}
             >
               Add New Board
             </Button>
@@ -143,7 +177,7 @@ function Page() {
             <span className={styles.subTitle}>
               Click the button and start flashing!
             </span>
-            <button className={styles.button} onClick={onCreateContent}>
+            <button className={styles.button} onClick={() => onCreateContent()}>
               <Image
                 src="/assets/images/round-button.svg"
                 alt="add board"
@@ -155,7 +189,11 @@ function Page() {
         ) : (
           <div className="flex flex-col items-center justify-start w-full h-full gap-4">
             {contents.map((item) => (
-              <BasicBoard key={item.boardId} />
+              <BasicBoard
+                key={item.boardId}
+                item={item}
+                updateContent={updateContent}
+              />
             ))}
           </div>
         )}
