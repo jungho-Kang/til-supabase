@@ -1,3 +1,4 @@
+"use client";
 import styles from "@/components/common/board/BasicBoard.module.scss";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -5,6 +6,7 @@ import { ChevronUp } from "lucide-react";
 import LabelCalendar from "@/components/common/calendar/LabelCalendar";
 import MarkdownDialog from "@/components/common/dialog/MarkdownDialog";
 import { Input } from "@/components/ui/input";
+import { useEffect, useState } from "react";
 
 // contents 배열에 대한 타입정의
 interface BoardContent {
@@ -20,15 +22,35 @@ interface BasicBoardProps {
   item: BoardContent;
   updateContent: (newData: BoardContent) => void;
   deleteContent: (deleteBoardId: string) => void;
+  fetchGetTodoId: () => Promise<void>;
 }
 
-function BasicBoard({ item, updateContent, deleteContent }: BasicBoardProps) {
+function BasicBoard({
+  item,
+  updateContent,
+  deleteContent,
+  fetchGetTodoId,
+}: BasicBoardProps) {
+  const [isCompleted, setIsCompleted] = useState<boolean>(item.isCompleted);
+
+  useEffect(() => {
+    setIsCompleted(item.isCompleted);
+  }, [item]);
+
   return (
     <div className={styles.container}>
       {/* 헤더 */}
       <div className={styles.container_header}>
         <div className={styles.container_header_titleBox}>
-          <Checkbox className="w-5 h-5" />
+          <Checkbox
+            className="w-5 h-5"
+            checked={isCompleted}
+            onCheckedChange={() => {
+              item.isCompleted = !item.isCompleted;
+              setIsCompleted(item.isCompleted);
+              updateContent(item);
+            }}
+          />
           <span className={styles.title}>
             {item.title ? item.title : "Please enter a title for your board"}
           </span>
@@ -77,7 +99,11 @@ function BasicBoard({ item, updateContent, deleteContent }: BasicBoardProps) {
       </div>
       {/* 하단 */}
       <div className={styles.container_footer}>
-        <MarkdownDialog item={item} updateContent={updateContent} />
+        <MarkdownDialog
+          item={item}
+          updateContent={updateContent}
+          fetchGetTodoId={fetchGetTodoId}
+        />
       </div>
     </div>
   );

@@ -102,6 +102,7 @@ function SideNavigation() {
             <div
               key={item.id}
               className="flex items-center py-2 bg-[#f5f5f4] rounded-sm cursor-pointer"
+              onClick={() => router.push(`/create/${item.id}`)}
             >
               <Dot className="mr-1 text-green-400" />
               <span className="text-sm">

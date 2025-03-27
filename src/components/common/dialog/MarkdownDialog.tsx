@@ -18,7 +18,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import LabelCalendar from "../calendar/LabelCalendar";
 
@@ -35,9 +35,14 @@ interface BoardContent {
 interface BasicBoardProps {
   item: BoardContent;
   updateContent: (newData: BoardContent) => void;
+  fetchGetTodoId: () => Promise<void>;
 }
 
-function MarkdownDialog({ item, updateContent }: BasicBoardProps) {
+function MarkdownDialog({
+  item,
+  updateContent,
+  fetchGetTodoId,
+}: BasicBoardProps) {
   // 다이얼로그 Props
   const [open, setOpen] = useState<boolean>(false);
   // 에디터의 제목/본문 내용
@@ -54,9 +59,7 @@ function MarkdownDialog({ item, updateContent }: BasicBoardProps) {
   const [endDate, setEndDate] = useState<Date | string | undefined>(
     item.endDate ? item.endDate : new Date().toISOString()
   );
-  const [isCompleted, setIsCompleted] = useState<boolean>(
-    item.isCompleted ? item.isCompleted : false
-  );
+  const [isCompleted, setIsCompleted] = useState<boolean>(item.isCompleted);
 
   // todo 작성
   const onSubmit = async () => {
@@ -80,11 +83,15 @@ function MarkdownDialog({ item, updateContent }: BasicBoardProps) {
     };
     updateContent(tempContent);
 
+    fetchGetTodoId();
+    setIsCompleted(tempContent.isCompleted);
     // 창닫고 내용 초기화
     setOpen(false);
-    // setTitle("");
-    // setContent("");
   };
+
+  useEffect(() => {
+    setIsCompleted(item.isCompleted);
+  }, [item.isCompleted]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -98,7 +105,13 @@ function MarkdownDialog({ item, updateContent }: BasicBoardProps) {
         <DialogHeader>
           <DialogTitle>
             <div className={styles.dialog_titleBox}>
-              <Checkbox className="w-5 h-5" />
+              <Checkbox
+                className="w-5 h-5"
+                checked={isCompleted}
+                onCheckedChange={() => {
+                  setIsCompleted(!isCompleted);
+                }}
+              />
               <input
                 type="text"
                 placeholder="Write a title for your board"
