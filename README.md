@@ -1,139 +1,133 @@
-# test
+# 추가보완
 
-## 1. 목록에서 Page 이동하기
+- /src/app/actions/todos-action.ts 변경
 
-- /src/components/common/navigation/SideNavigation.tsx
+```ts
+// Update 기능 id 한개
+export async function updateTodoIdTitle(
+  id: number,
+  title: string,
+  startDate: Date | undefined,
+  endDate: Date | undefined
+) {
+  const supabase = await createServerSideClient();
 
-```tsx
-{
-  todos!.map((item) => (
-    <div
-      key={item.id}
-      className="flex items-center py-2 bg-[#f5f5f4] rounded-sm cursor-pointer"
-      onClick={() => router.push(`/create/${item.id}`)}
-    >
-      <Dot className="mr-1 text-green-400" />
-      <span className="text-sm">{item.title ? item.title : "No Title"}</span>
-    </div>
-  ));
+  const { data, error, status } = await supabase
+    .from("todos")
+    .update({
+      title: title,
+      start_date: startDate?.toISOString(),
+      end_date: endDate?.toISOString(),
+    })
+    .eq("id", id)
+    .select()
+    .single();
+
+  return { data, error, status } as {
+    data: TodosRow | null;
+    error: Error | null;
+    status: number;
+  };
 }
 ```
-
-## 2. Page에서 목록 스크롤 시키기
-
-- /src/app/create/[id]/page.tsx
-- `overflow-y-scroll`
-
-```tsx
-<div className="flex flex-col items-center justify-start w-full h-full gap-4 overflow-y-scroll">
-  {contents.map((item) => (
-    <BasicBoard
-      key={item.boardId}
-      item={item}
-      updateContent={updateContent}
-      deleteContent={deleteContent}
-      fetchGetTodoId={fetchGetTodoId}
-    />
-  ))}
-</div>
-```
-
-- global.css 추가
-
-```css
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    scrollbar-width: none;
-  }
-  ::-webkit-scrollbar {
-    display: none;
-  }
-  body {
-    @apply bg-background text-foreground;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    height: 100%;
-  }
-}
-```
-
-## 3. Progress 정리하기
 
 - /src/app/create/[id]/page.tsx
 
 ```tsx
-// Progress Bar 처리
-const [completeCount, setCompleteCount] = useState<number>(0);
-const [totalCount, setTotalCount] = useState<number>(0);
-```
-
-```tsx
-// contents의 isCompleted가 true인 개수 파악하기
-const calcCompletedCount = (temp: BoardContent[]) => {
-  const arr = temp.filter((item) => item.isCompleted === true);
-  setCompleteCount(arr.length);
-  setTotalCount((arr.length / temp.length) * 100);
+// 타이틀 저장 함수
+const handleSaveTitle = async () => {
+  const { data, error, status } = await updateTodoIdTitle(
+    Number(id),
+    title,
+    startDate,
+    endDate
+  );
 };
 ```
 
 ```tsx
-<span className={styles.progressBar_status}>
-  {completeCount}/{contents.length} completed!
-</span>
-```
-
-```tsx
-<Progress
-  value={totalCount}
-  className="w-[30%] h-2"
-  indicateColor="bg-orange-500"
+<LabelCalendar
+  label="From"
+  required={false}
+  selectedDate={startDate}
+  onDateChange={setStarDate}
+/>
+<LabelCalendar
+  label="To"
+  required={false}
+  selectedDate={endDate}
+  onDateChange={setEndDate}
 />
 ```
 
-### checkbox 처리 필요
+# jotai
 
-- /src/components/common/board/BasicBoard.tsx
+- https://jotai.org
+- https://tutorial.jotai.org/quick-start/intro
 
-```tsx
-const [isCompleted, setIsCompleted] = useState<boolean>(item.isCompleted);
+```bash
+npm install jotai@latest --legacy-peer-deps
+```
+
+## Store 설정
+
+- /src/app/store 폴더 생성
+- /src/app/store/index.ts 생성
+
+```ts
+import { atom } from "jotai";
+
+// 상태값 저장 구분용 변수
+export const sidebarStateAtom = atom<string>("");
 ```
 
 ```tsx
+const [sidebarState, setSidebarState] = useAtom(sidebarStateAtom);
+const path = usePathname();
+
 useEffect(() => {
-  setIsCompleted(item.isCompleted);
-}, [item]);
+  if (sidebarState !== "default") {
+    fetchGetTodos();
+  }
+}, [sidebarState, path]);
+```
+
+## Store 갱신하기
+
+- todo-action.ts
+
+```ts
+const { data, error, status } = await supabase
+  .from("todos")
+  .select("*")
+  .order("id", { ascending: false });
+```
+
+- /src/app/create/[id]/page.tsx
+
+```tsx
+// jotai 상태 사용하기
+const [sidebarState, setSidebarState] = useAtom(sidebarStateAtom);
 ```
 
 ```tsx
-<Checkbox
-  className="w-5 h-5"
-  checked={isCompleted}
-  onCheckedChange={() => {
-    item.isCompleted = !item.isCompleted;
-    setIsCompleted(item.isCompleted);
-    updateContent(item);
-  }}
-/>
-```
+// Page 삭제 함수
+const handleDeleteBoard = async () => {
+  const { error, status } = await deleteTodo(Number(id));
 
-- /src/components/common/dialog/MarkdownDialog.tsx
+  if (error) {
+    toast.error("Todo 삭제 실패", {
+      description: `Todo 삭제에 실패하였습니다. ${error.message}`,
+      duration: 3000,
+    });
+    return;
+  }
 
-```tsx
-const [isCompleted, setIsCompleted] = useState<boolean>(item.isCompleted);
-```
-
-```tsx
-<Checkbox
-  className="w-5 h-5"
-  checked={isCompleted}
-  onCheckedChange={() => {
-    setIsCompleted(!isCompleted);
-  }}
-/>
+  toast.success("Todo 삭제 성공", {
+    description: "Todo 삭제에 성공하였습니다.",
+    duration: 3000,
+  });
+  setSidebarState("delete");
+  router.push("/");
+};
 ```

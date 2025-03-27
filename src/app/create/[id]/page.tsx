@@ -20,6 +20,8 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import Image from "next/image";
 import { ChevronLeftIcon } from "lucide-react";
+import { useAtom } from "jotai";
+import { sidebarStateAtom } from "@/app/store";
 
 // contents 배열에 대한 타입정의
 interface BoardContent {
@@ -32,23 +34,23 @@ interface BoardContent {
 }
 
 function Page() {
+  // jotai 상태 사용하기
+  const [sidebarState, setSidebarState] = useAtom(sidebarStateAtom);
+
   const router = useRouter();
   const { id } = useParams();
   // 데이터 출력 state
   const [title, setTitle] = useState<string>("");
   const [contents, setContents] = useState<BoardContent[]>([]);
-  const [startDate, setStartDate] = useState<string | Date>();
-  const [endDate, setEndDate] = useState<string | Date>();
+  const [startDate, setStartDate] = useState<undefined | Date>();
+  const [endDate, setEndDate] = useState<undefined | Date>();
   // Progress Bar 처리
   const [completeCount, setCompleteCount] = useState<number>(0);
   const [totalCount, setTotalCount] = useState<number>(0);
 
   // Page 삭제 함수
   const handleDeleteBoard = async () => {
-    console.log(id, "제거하라");
     const { error, status } = await deleteTodo(Number(id));
-    console.log(error);
-    console.log(status);
 
     if (error) {
       toast.error("Todo 삭제 실패", {
@@ -62,16 +64,20 @@ function Page() {
       description: "Todo 삭제에 성공하였습니다.",
       duration: 3000,
     });
+    setSidebarState("delete");
     router.push("/");
   };
 
   // 타이틀 저장 함수
   const handleSaveTitle = async () => {
-    console.log(title);
-    const { data, error, status } = await updateTodoIdTitle(Number(id), title);
-    console.log(data);
-    console.log(error);
-    console.log(status);
+    const { data, error, status } = await updateTodoIdTitle(
+      Number(id),
+      title,
+      startDate,
+      endDate
+    );
+    // jotai의 State 갱신
+    setSidebarState("titleChange");
   };
 
   // 컨텐츠 삭제 함수
@@ -126,8 +132,8 @@ function Page() {
       duration: 3000,
     });
     setTitle(data?.title ? data.title : "");
-    setStartDate(data?.start_date ? data.start_date : new Date());
-    setEndDate(data?.end_date ? data.end_date : new Date());
+    setStartDate(data?.start_date ? new Date(data.start_date) : new Date());
+    setEndDate(data?.end_date ? new Date(data.end_date) : new Date());
     const temp = data?.contents ? JSON.parse(data.contents as string) : [];
     setContents(temp);
     // 카운트
@@ -186,8 +192,6 @@ function Page() {
     fetchGetTodoId();
   }, []);
 
-  useEffect(() => {}, []);
-
   return (
     <div className={styles.container}>
       {/* board 메뉴 */}
@@ -245,13 +249,13 @@ function Page() {
             <div className={styles.calendarBox_calendar}>
               <LabelCalendar
                 label="From"
-                selectedDate={startDate as Date}
+                selectedDate={startDate}
                 onDateChange={setStartDate}
                 required={false}
               />
               <LabelCalendar
                 label="To"
-                selectedDate={endDate as Date}
+                selectedDate={endDate}
                 onDateChange={setEndDate}
                 required={true}
               />

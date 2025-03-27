@@ -18,8 +18,8 @@ import styles from "@/components/common/calendar/LabelCalendar.module.scss";
 interface LabelCalendarProps {
   label: string;
   required: boolean;
-  selectedDate: Date;
-  onDateChange?: Dispatch<SetStateAction<string | Date | undefined>>;
+  selectedDate: Date | undefined;
+  onDateChange?: Dispatch<SetStateAction<Date | undefined>>;
 }
 // required : false면 날짜 선택
 // required : true면 날짜 선택 불가

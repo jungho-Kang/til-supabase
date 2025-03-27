@@ -1,6 +1,7 @@
 "use client";
 // actions
 import { createTodo, getTodos, TodosRow } from "@/app/actions/todos-action";
+import { sidebarStateAtom } from "@/app/store";
 
 // scss
 import styles from "@/components/common/navigation/SideNavigation.module.scss";
@@ -8,13 +9,19 @@ import styles from "@/components/common/navigation/SideNavigation.module.scss";
 // shadcn/ui
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAtom } from "jotai";
 import { Dot, Search } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 function SideNavigation() {
+  // jotai 상태 사용하기
+  const [sidebarState, setSidebarState] = useAtom(sidebarStateAtom);
+  // 라우터 이동
   const router = useRouter();
+  const path = usePathname();
+
   const [todos, setTodos] = useState<TodosRow[] | null>([]);
 
   // create
@@ -42,6 +49,7 @@ function SideNavigation() {
 
     // 데이터 추가 성공 시 할 일 등록페이지로 이동시킴
     // http://localhost:3000/create/[data.id] 로 이동
+    setSidebarState("add");
     router.push(`/create/${data.id}`);
   };
 
@@ -65,8 +73,10 @@ function SideNavigation() {
   };
 
   useEffect(() => {
-    fetchGetTodos();
-  }, []);
+    if (sidebarState !== "default") {
+      fetchGetTodos();
+    }
+  }, [sidebarState, path]);
 
   return (
     <div className={styles.container}>
@@ -85,7 +95,7 @@ function SideNavigation() {
       <div className={styles.container_buttonBox}>
         <Button
           variant={"outline"}
-          className="w-full text-orange-500 border-orange-400 hover:bg-orange-50 hover:text-orange-500"
+          className="w-full text-orange-500 border-orange-400 hover:bg-orange-50 hover:text-orange-500 cursor-pointer"
           onClick={onCreate}
         >
           Add New Page
