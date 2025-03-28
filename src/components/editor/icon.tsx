@@ -407,23 +407,23 @@ function Link({ editor }: { editor: Editor }) {
   );
 }
 
-/** AddPhoto 아이콘 */
-function AddPhoto({ editor }: { editor: Editor }) {
-  if (!editor) return null;
+// /** AddPhoto 아이콘 */
+// function AddPhoto({ editor }: { editor: Editor }) {
+//   if (!editor) return null;
 
-  const handleClick = () => {
-    // 여기에서 실제 이미지 업로드 로직 or URL 입력 등 처리 가능
-    // 임시로 샘플 이미지 삽입
-    editor.chain().focus().setImage({ src: "https://i.pravatar.cc" }).run();
-  };
+//   const handleClick = () => {
+//     // 여기에서 실제 이미지 업로드 로직 or URL 입력 등 처리 가능
+//     // 임시로 샘플 이미지 삽입
+//     editor.chain().focus().setImage({ src: "https://i.pravatar.cc" }).run();
+//   };
 
-  return (
-    <button
-      onClick={handleClick}
-      className={`${styles.toolbarBtn} ${styles.image}`}
-    />
-  );
-}
+//   return (
+//     <button
+//       onClick={handleClick}
+//       className={`${styles.toolbarBtn} ${styles.image}`}
+//     />
+//   );
+// }
 
 // Icon 객체로 모아서 export
 export const Icon = {
@@ -444,5 +444,5 @@ export const Icon = {
   Quote,
   Code,
   Link,
-  AddPhoto,
+  // AddPhoto,
 };
