@@ -19,6 +19,7 @@
   justify-content: center;
   width: 100%;
   margin: 12px 0;
+  gap: 4px;
 }
 .container_todos {
   display: flex;
