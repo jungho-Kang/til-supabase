@@ -74,7 +74,6 @@ export async function deleteBlog(id: number) {
   const { error, status } = await supabase.from("blog").delete().eq("id", id);
 
   return { error, status } as {
-    data: BlogRow | null;
     error: Error | null;
     status: number;
   };

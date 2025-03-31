@@ -23,8 +23,10 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { toast } from "sonner";
 import { deleteFile } from "@/app/actions/blog-storage-action";
+import { useRouter } from "next/navigation";
 
 function CreateEditor() {
+  const router = useRouter();
   // 내용
   const [title, setTitle] = useState<string>("");
   const [content, setContent] = useState<string>("");
@@ -164,6 +166,7 @@ function CreateEditor() {
     }
     setTitle("");
     setContent("");
+    router.push("/blog");
   };
 
   return (
