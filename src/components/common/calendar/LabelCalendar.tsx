@@ -19,7 +19,7 @@ interface LabelCalendarProps {
   label: string;
   required: boolean;
   selectedDate: Date | undefined;
-  onDateChange?: Dispatch<SetStateAction<Date | undefined>>;
+  onDateChange?: Dispatch<SetStateAction<Date | string | undefined>>;
 }
 // required : false면 날짜 선택
 // required : true면 날짜 선택 불가

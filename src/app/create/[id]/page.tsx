@@ -42,8 +42,8 @@ function Page() {
   // 데이터 출력 state
   const [title, setTitle] = useState<string>("");
   const [contents, setContents] = useState<BoardContent[]>([]);
-  const [startDate, setStartDate] = useState<undefined | Date>();
-  const [endDate, setEndDate] = useState<undefined | Date>();
+  const [startDate, setStartDate] = useState<undefined | string | Date>();
+  const [endDate, setEndDate] = useState<undefined | string | Date>();
   // Progress Bar 처리
   const [completeCount, setCompleteCount] = useState<number>(0);
   const [totalCount, setTotalCount] = useState<number>(0);
@@ -73,8 +73,8 @@ function Page() {
     const { data, error, status } = await updateTodoIdTitle(
       Number(id),
       title,
-      startDate,
-      endDate
+      startDate as Date,
+      endDate as Date
     );
     // jotai의 State 갱신
     setSidebarState("titleChange");
@@ -249,13 +249,13 @@ function Page() {
             <div className={styles.calendarBox_calendar}>
               <LabelCalendar
                 label="From"
-                selectedDate={startDate}
+                selectedDate={startDate as Date}
                 onDateChange={setStartDate}
                 required={false}
               />
               <LabelCalendar
                 label="To"
-                selectedDate={endDate}
+                selectedDate={endDate as Date}
                 onDateChange={setEndDate}
                 required={true}
               />
