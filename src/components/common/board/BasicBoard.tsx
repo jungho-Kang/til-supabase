@@ -1,11 +1,10 @@
 "use client";
 import styles from "@/components/common/board/BasicBoard.module.scss";
+import LabelCalendar from "@/components/common/calendar/LabelCalendar";
+import MarkdownDialog from "@/components/common/dialog/MarkdownDialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronUp } from "lucide-react";
-import LabelCalendar from "@/components/common/calendar/LabelCalendar";
-import MarkdownDialog from "@/components/common/dialog/MarkdownDialog";
-import { Input } from "@/components/ui/input";
 import { useEffect, useState } from "react";
 
 // contents 배열에 대한 타입정의

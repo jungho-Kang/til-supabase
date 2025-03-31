@@ -8,7 +8,7 @@ import {
 // nanoid
 import { nanoid } from "nanoid";
 // scss
-import styles from "@/app/create/[id]/page.module.scss";
+import styles from "@/app/(with-side)/create/[id]/page.module.scss";
 // component
 import BasicBoard from "@/components/common/board/BasicBoard";
 import LabelCalendar from "@/components/common/calendar/LabelCalendar";

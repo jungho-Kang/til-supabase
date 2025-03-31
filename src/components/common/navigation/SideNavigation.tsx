@@ -9,6 +9,7 @@ import styles from "@/components/common/navigation/SideNavigation.module.scss";
 // shadcn/ui
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { signOut } from "@/lib/supabase/actions";
 import { useAtom } from "jotai";
 import { Dot, Search } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
@@ -78,6 +79,11 @@ function SideNavigation() {
     }
   }, [sidebarState, path]);
 
+  const fetchSignOut = async () => {
+    await signOut();
+    router.push("/");
+  };
+
   return (
     <div className={styles.container}>
       {/* 검색창 */}
@@ -114,6 +120,17 @@ function SideNavigation() {
           {/* 로그아웃 버튼 배치 */}
           {"홍길동"}님 Todo List
         </div>
+
+        <div>
+          <Button
+            variant={"outline"}
+            className="cursor-pointer"
+            onClick={fetchSignOut}
+          >
+            Sign Out
+          </Button>
+        </div>
+
         <div className={styles.container_todos_list}>
           {todos!.map((item) => (
             <div
