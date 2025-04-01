@@ -16,7 +16,13 @@ import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-function SideNavigation() {
+// zustand
+import { useUserStore } from "@/app/store/useUserStore";
+import { User } from "@supabase/supabase-js";
+
+function SideNavigation({ user }: { user: User | null }) {
+  const { name, email, setUser } = useUserStore();
+
   // jotai 상태 사용하기
   const [sidebarState, setSidebarState] = useAtom(sidebarStateAtom);
   // 라우터 이동
@@ -84,6 +90,13 @@ function SideNavigation() {
     router.push("/");
   };
 
+  // zustand 업데이트
+  useEffect(() => {
+    if (user) {
+      setUser(user.user_metadata.full_name, user.email!, user.id);
+    }
+  }, []);
+
   return (
     <div className={styles.container}>
       {/* 검색창 */}
@@ -118,7 +131,7 @@ function SideNavigation() {
       <div className={styles.container_todos}>
         <div className={styles.container_todos_label}>
           {/* 로그아웃 버튼 배치 */}
-          {"홍길동"}님 Todo List
+          {name}님 Todo List {email}
         </div>
 
         <div className="flex justify-center w-[232px] mb-4 absolute bottom-0">
