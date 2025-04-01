@@ -121,10 +121,10 @@ function SideNavigation() {
           {"홍길동"}님 Todo List
         </div>
 
-        <div>
+        <div className="flex justify-center w-[232px] mb-4 absolute bottom-0">
           <Button
-            variant={"outline"}
-            className="cursor-pointer"
+            variant={"ghost"}
+            className="cursor-pointer text-white bg-blue-500 hover:bg-blue-600 hover:text-white"
             onClick={fetchSignOut}
           >
             Sign Out
