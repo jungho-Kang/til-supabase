@@ -3,6 +3,7 @@ import { Roboto } from "next/font/google";
 import "./globals.css";
 // shadcn/ui
 import { Toaster } from "@/components/ui/sonner";
+import ReactQueryProvider from "@/providers/ReactQueryProvider";
 
 const roboto = Roboto({
   variable: "--font-roboto",
@@ -23,7 +24,7 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className={`${roboto.variable}  antialiased`}>
-        {children}
+        <ReactQueryProvider>{children}</ReactQueryProvider>
         <Toaster />
       </body>
     </html>
