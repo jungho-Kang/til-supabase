@@ -1,10 +1,4 @@
-# React Query
-
-- v3, v4, v5 각 버전이 사용법 및 설치법이 다릅니다.
-- 현재는 `v5`를 사용함.
-- https://tanstack.com/query/v5
-- https://tanstack.com/query/v5/docs/framework/react/overview
-- https://velog.io/@kandy1002/React-Query-푹-찍어먹기
+# React Query 적용
 
 ## 1. 설치
 
@@ -22,7 +16,7 @@ npm i @tanstack/react-query-devtools --legacy-peer-deps
 
 ## 2. 개념
 
-- 데이터를 쉽게 가져오고, 자동으로 업데이트해 주는 도구 라이브러리입니다
+- 데이터를 쉽게 가져오고, 자동으로 업데이트해 주는 도구 라이브러리입니다.
 - `fresh` 한 데이터 : 최신 데이터
 - `stale` 한 데이터 : 기존 데이터 (상해버린 데이터)
 - 서버 상태를 불러오고, 캐싱하고, 지속적으로 동기화하고 업데이트 도움 라이브러리
@@ -32,16 +26,16 @@ npm i @tanstack/react-query-devtools --legacy-peer-deps
 
 ### 3.1. ReactQueryProvider 생성
 
-- 이 파일의 용도는 App 전체에서 React Query를 사용하기 위한 provider 역할
-- `/src/providers` 폴더 생성
-- `/src/providers/ReactQueryProvider.tsx` 파일 생성
+- 이 파일의 용도는 App 전체에서 React Query 를 사용하기 위한 provider 역할
+- `/src/providers 폴더` 생성
+- `/src/providers/ReactQueryProvider.tsx 파일` 생성
 
 ```tsx
 "use client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
 // 개발자 도구
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+
 export const queryClient = new QueryClient();
 export default function ReactQueryProvider({
   children,
@@ -51,7 +45,7 @@ export default function ReactQueryProvider({
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      {/* Dev Tool : React Query DevTools를 세팅 */}
+      {/* Dev Tool : React Query DevTools 를 셋팅 */}
       <ReactQueryDevtools initialIsOpen={false} position="bottom" />
     </QueryClientProvider>
   );
@@ -61,12 +55,13 @@ export default function ReactQueryProvider({
 ### 3.2. ReactQueryProvider 적용
 
 - 앱 전체에서 활용할 것이므로
-- /src/app/layout.tsx에 설정
+- /src/app/layout.tsx 에 설정
 
 ```tsx
 import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
 import "./globals.css";
+
 // shadcn/ui
 import { Toaster } from "@/components/ui/sonner";
 import ReactQueryProvider from "@/providers/ReactQueryProvider";
@@ -98,392 +93,446 @@ export default function RootLayout({
 }
 ```
 
-## 4. 기능 살펴보기 라우터구성
+## 4. useMutation, useQuery 사용 예제
 
-- 간단한 Todo로 실습
-
-### 4.1. Server Action 생성
-
-- `/src/app/actions/text-action.ts` 파일 생성
-
-```ts
-"use server";
-const TODOS: string[] = [];
-// 할일 목록 가져오기
-export const getTodos = async (): Promise<string[]> => {
-  // 일부로 서버 지연되는 것처럼 1초 소비
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  return TODOS;
-};
-// 할일 목록 추가하기
-export const createTodos = async (data: string): Promise<string[]> => {
-  // 일부로 서버 지연되는 것처럼 1초 소비
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  // 새로운 todo를 추가해서 return
-  TODOS.push(data);
-  return TODOS;
-};
-```
-
-### 4.2. test 라우터를 생성
-
-- http://localhost:3000/test 접근
-- `/src/app/test` 폴더 생성
-- `/src/app/test/page.tsx` 파일 생성
-
-```tsx
-const Page = () => {
-  return (
-    <div>
-      <h1>Test Todo</h1>
-    </div>
-  );
-};
-export default Page;
-```
-
-## 5. useQuery() 살펴보기 (데이터 가져오기)
-
-- /src/app/test/page.tsx
+- /src/app/(with-side)/page.tsx
 
 ```tsx
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { getTodos } from "@/app/actions/test-action";
+import styles from "@/app/(with-side)/page.module.scss";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { createTodo } from "@/app/actions/todos-action";
+import { toast } from "sonner";
+// Mutation
+import { useMutation } from "@tanstack/react-query";
 
-const Page = () => {
-  // 데이터 가져오기
-  const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["unique"],
-    queryFn: getTodos,
-  });
+function Home() {
+  const router = useRouter();
 
-  return (
-    <div>
-      <h1>Test Todo</h1>
-      {isLoading && <div>데이터 로딩중 ...</div>}
-      {error && <div>Error : {error.message}</div>}
-      {data && (
-        <div>
-          {data.map((item, index) => (
-            <div key={index}>{item}</div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-export default Page;
-```
-
-### 5.1. queryKey 옵션
-
-- queryKey
-  - 데이터를 구분하는 이름, 구분자 역할, 유일한 이름
-  - 이름이 중복되면 요청은 한 번만 하므로 의미없는 API 호출을 방지
-
-```tsx
-const { data, isLoading, error, refetch } = useQuery({
-  queryKey: ["unique"],
-  queryFn: getTodos,
-});
-```
-
-- userId가 1이라는 값이라면 ["unique", 1]
-- userId가 2이라는 값이라면 ["unique", 2]
-- 각 사용자별 목록을 별도로 관리가능
-
-- `const { data, isLoading, error, refetch, isFetching }`
-  - data : 가져온 데이터 (성공하면 데이터가 저장됨)
-  - isLoading : 데이터를 가지고 오는 중이면 true
-  - error : 에러가 발생하면 에러 정보가 담겨있음
-  - isFetching : 데이터를 새로 요청 중일 때 true
-  - refetch : 데이터를 다시 가져오도록 함수 호출
-    - `<button onClick={() => refetch()}>다시호출</button>`
-
-```tsx
-const { data, isLoading, error, refetch } = useQuery({
-  queryKey: ["unique", userId],
-  queryFn: getTodos,
-});
-```
-
-### 5.2. staleTime 옵션
-
-- 일정한 시간만큼 새로운 데이터를 가져오지 않는다
-- 일정한 시간만큼 캐싱이 되어있는 데이터를 사용한다
-
-```tsx
-const { data, isLoading, error, refetch } = useQuery({
-  queryKey: ["unique"],
-  queryFn: getTodos,
-  staleTime: 5000,
-});
-```
-
-### 5.3. refetchInterval 옵션
-
-- 일정한 시간마다 새로운 데이터를 다시 가져오기
-
-```tsx
-const { data, isLoading, error, refetch } = useQuery({
-  queryKey: ["unique"],
-  queryFn: getTodos,
-  refetchInterval: 5000,
-});
-```
-
-### 5.4. enabled 옵션
-
-- 조건에 따라서 true인 경우 데이터를 가져온다
-
-```tsx
-const [isFetch, setIsFetch] = useState<boolean>(false);
-const { data, isLoading, error, refetch } = useQuery({
-  queryKey: ["unique"],
-  queryFn: getTodos,
-  enabled: isFetch,
-});
-```
-
-### 5.5. refetchOnWindowFocus 옵션
-
-- 브라우저 창이 다시 활성화될 때(`focus`될 때) 자동으로 데이터 새로고침
-
-```tsx
-const { data, isLoading, error, refetch } = useQuery({
-  queryKey: ["unique"],
-  queryFn: getTodos,
-  refetchOnWindowFocus: true, // 창 포커스 시 자동 새로고침
-});
-```
-
-### 5.6. refetchOnMount 옵션
-
-- 컴포넌트가 마운트될 때(`mount` 시) 자동으로 데이터 새로고침
-
-```tsx
-const { data, isLoading, error, refetch } = useQuery({
-  queryKey: ["unique"],
-  queryFn: getTodos,
-  refetchOnMount: true, // 컴포넌트 마운트 시 자동 새로고침
-});
-```
-
-### 5.7. refetchOnReconnect 옵션
-
-- 네트워크 연결이 끊어졌다가 다시 연결될 때(`reconnect` 시) 자동으로 데이터 새로고침
-
-```tsx
-const { data, isLoading, error, refetch } = useQuery({
-  queryKey: ["unique"],
-  queryFn: getTodos,
-  refetchOnReconnect: true, // 네트워크 재연결 시 자동 새로고침
-});
-```
-
-### 5.8. refetchIntervalInBackground 옵션
-
-- 브라우저가 백그라운드(비활성) 상태일 때도 `refetchInterval`이 동작하도록 설정
-- 기본적으로 브라우저가 비활성 상태이면 `refetchInterval`이 멈추지만, true로 설정하면 계속 실행됨
-
-```tsx
-const { data, isLoading, error, refetch } = useQuery({
-  queryKey: ["unique"],
-  queryFn: getTodos,
-  refetchIntervalInBackground: true, // 백그라운드에서도 주기적 새로고침 유지
-});
-```
-
-### 5.9. gcTime 옵션
-
-- 데이터를 캐시에 유지하는 시간
-
-```tsx
-const { data, isLoading, error, refetch } = useQuery({
-  queryKey: ["uniq"],
-  queryFn: getTodos,
-  gcTime: 1000 * 60 * 5, // 캐시 유지 시간: 5분
-});
-```
-
-### 5.10. retry 옵션
-
-- 요청이 실패했을 때 자동으로 재시도하는 횟수를 설정하는 옵션
-
-```tsx
-const { data, isLoading, error, refetch } = useQuery({
-  queryKey: ["uniq"],
-  queryFn: getTodos,
-  retry: 3, // 실패 시 최대 3번 재시도
-});
-```
-
-### 5.11. retryDelay 옵션
-
-- 재시도하기 전에 대기할 시간설정
-
-```tsx
-const { data, isLoading, error, refetch } = useQuery({
-  queryKey: ["uniq"],
-  queryFn: getTodos,
-  retryDelay: 3, // 재시도 간 3초 대기
-});
-```
-
-## 6. useMutation() 살펴보기 (데이터 조작하기)
-
-- 데이터 생성, 수정, 삭제 등의 작업을 처리함
-- 데이터를 변경하는 작업
-- mutation.mutate(데이터)
-
-  - 서버로 데이터를 보내는 작업을 수행
-  - `onClick={() => createMutation.mutate()}`
-
-- mutation.data: 서버에서 성공적으로 반환된 데이터
-- mutation.isLoading: 서버 요청 중일 때 true
-- mutation.isError: 에러가 발생했을 때 true
-- mutation.isSuccess: 요청이 성공했을 때 true
-- mutation.isPending: 서버와의 연결을 시도 중일 때 true
-
-- /src/app/test/page.tsx
-
-```tsx
-"use client";
-
-import { createTodos, getTodos } from "@/app/actions/test-action";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-
-const Page = () => {
-  const [testInput, setTestInput] = useState<string>("");
-
-  // 데이터 가져오기
-  const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["unique"],
-    queryFn: getTodos,
-    retry: 3,
-    retryDelay: 3000,
-  });
-
-  // 데이터 추가하기
+  // create
   const createMutation = useMutation({
-    mutationFn: async () => {
-      if (testInput.trim() === "") {
-        alert("할 일을 등록해주세요.");
-        return;
-      }
-      await createTodos(testInput);
+    mutationFn: () =>
+      createTodo({
+        title: "",
+        contents: JSON.stringify([]),
+        start_date: new Date().toISOString(),
+        end_date: new Date().toISOString(),
+      }),
+    onSuccess: (data) => {
+      toast.success("데이터 추가 성공", {
+        description: "데이터 추가에 성공하였습니다.",
+        duration: 3000,
+      });
+
+      router.push(`/create/${data.data.id}`);
+    },
+    onError: (error) => {
+      toast.error("데이터 추가 실패", {
+        description: `데이터 추가에 실패하였습니다. ${error.message}`,
+        duration: 3000,
+      });
+    },
+  });
+
+  return (
+    <div className={styles.container}>
+      <div className={styles.container_onBoarding}>
+        <span className={styles.container_onBoarding_title}></span>
+        <div className={styles.container_onBoarding_steps}>
+          <span>1. Create a page</span>
+          <span>2. Add boards to page</span>
+        </div>
+        {/* 페이지 추가 버튼 */}
+        <Button
+          variant={"outline"}
+          className="w-full bg-transparent text-orange-500 border-orange-400 hover:bg-orange-50 hover:text-orange-500"
+          disabled={createMutation.isPending}
+          onClick={() => createMutation.mutate()}
+        >
+          {createMutation.isPending ? "Add..." : "Add New page"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+export default Home;
+```
+
+- /src/app/(with-side)/create/[id]/page.tsx
+
+```tsx
+"use client";
+import {
+  deleteTodo,
+  getTodoId,
+  updateTodoId,
+  updateTodoIdTitle,
+} from "@/app/actions/todos-action";
+// nanoid
+import { nanoid } from "nanoid";
+// scss
+import styles from "@/app/(with-side)/create/[id]/page.module.scss";
+// component
+import BasicBoard from "@/components/common/board/BasicBoard";
+import LabelCalendar from "@/components/common/calendar/LabelCalendar";
+// shadcn/ui
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import Image from "next/image";
+import { ChevronLeftIcon } from "lucide-react";
+import { useAtom } from "jotai";
+import { sidebarStateAtom } from "@/app/store";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/providers/ReactQueryProvider";
+
+// contents 배열에 대한 타입정의
+interface BoardContent {
+  isCompleted: boolean;
+  title: string;
+  content: string;
+  startDate: string | Date;
+  endDate: string | Date;
+  boardId: string; // 랜덤한 아이디를 생성해 줄 예정
+}
+
+function Page() {
+  // jotai 상태 사용하기
+  const [sidebarState, setSidebarState] = useAtom(sidebarStateAtom);
+
+  const router = useRouter();
+  const { id } = useParams();
+  // 데이터 출력 state
+  const [title, setTitle] = useState<string>("");
+  const [contents, setContents] = useState<BoardContent[]>([]);
+  const [startDate, setStartDate] = useState<undefined | string | Date>();
+  const [endDate, setEndDate] = useState<undefined | string | Date>();
+  // Progress Bar 처리
+  const [completeCount, setCompleteCount] = useState<number>(0);
+  const [totalCount, setTotalCount] = useState<number>(0);
+
+  // id에 해당하는 Row 데이터를 읽어오기
+  const {
+    error,
+    data: queryData,
+    refetch,
+  } = useQuery({
+    queryKey: ["todos"],
+    queryFn: () => getTodoId(Number(id)),
+  });
+
+  // Page 삭제 함수
+  const deleteBoardMutation = useMutation({
+    mutationFn: () => {
+      return deleteTodo(Number(id));
     },
     onSuccess: () => {
-      setTestInput("");
+      toast.success("Todo 삭제 성공", {
+        description: "Todo 삭제에 성공하였습니다.",
+        duration: 3000,
+      });
+      setSidebarState("delete");
+      router.push("/");
+    },
+    onError: (error) => {
+      toast.error("Todo 삭제 실패", {
+        description: `Todo 삭제에 실패하였습니다. ${error.message}`,
+        duration: 3000,
+      });
+    },
+  });
+
+  // 타이틀 저장 함수
+  const saveTitleMutation = useMutation({
+    mutationFn: () => {
+      return updateTodoIdTitle(
+        Number(id),
+        title,
+        startDate as Date,
+        endDate as Date
+      );
+    },
+    onSuccess: () => {
+      toast.success("타이틀 수정 성공", {
+        description: "타이틀 수정에 성공하였습니다.",
+        duration: 3000,
+      });
+
+      // jotai의 State 갱신
+      setSidebarState("titleChange");
+    },
+    onError: (error) => {
+      toast.error("타이틀 수정 실패", {
+        description: `타이틀 수정에 실패하였습니다. ${error.message}`,
+        duration: 3000,
+      });
+    },
+  });
+
+  // 컨텐츠 삭제 함수
+  const deleteContentMutation = useMutation({
+    mutationFn: (deleteBoardId: string) => {
+      const tempContentArr = contents.filter(
+        (item) => item.boardId !== deleteBoardId
+      );
+
+      // 서버에 Row를 업데이트
+      return updateTodoId(Number(id), JSON.stringify(tempContentArr));
+    },
+    onSuccess: () => {
       refetch();
     },
     onError: (error) => {
-      console.log("Error : 데이터 추가 실패");
-      console.log(error.message);
+      console.log(error);
     },
   });
 
+  // 컨텐츠 데이터 업데이트 함수
+  const updateContentMutation = useMutation({
+    mutationFn: (newData: BoardContent) => {
+      const newContentArr = contents.map((item) => {
+        if (item.boardId === newData.boardId) {
+          return newData;
+        }
+        return item;
+      });
+
+      return updateTodoId(Number(id), JSON.stringify(newContentArr));
+    },
+    onSuccess: () => {
+      refetch();
+    },
+    onError: (error) => {
+      console.log(error);
+    },
+  });
+
+  // contents의 isCompleted가 true인 개수 파악하기
+  const calcCompletedCount = (temp: BoardContent[]) => {
+    const arr = temp.filter((item) => item.isCompleted === true);
+    setCompleteCount(arr.length);
+    setTotalCount((arr.length / temp.length) * 100);
+  };
+
+  // id에 해당하는 Row 데이터를 읽어오기
+  const fetchGetTodoId = async () => {
+    const { data, error, status } = await getTodoId(Number(id));
+    // 에러 발생 시
+    if (error) {
+      toast.error("데이터 호출 실패", {
+        description: `데이터 호출에 실패하였습니다. ${error.message}`,
+        duration: 3000,
+      });
+      return;
+    }
+
+    // 최종 데이터
+    toast.success("데이터 호출 성공", {
+      description: "데이터 호출에 성공하였습니다.",
+      duration: 3000,
+    });
+    setTitle(data?.title ? data.title : "");
+    setStartDate(data?.start_date ? new Date(data.start_date) : new Date());
+    setEndDate(data?.end_date ? new Date(data.end_date) : new Date());
+    const temp = data?.contents ? JSON.parse(data.contents as string) : [];
+    setContents(temp);
+    // 카운트
+    calcCompletedCount(temp);
+  };
+
+  // 컨텐츠 추가하기
+  const initData: BoardContent = {
+    boardId: nanoid(),
+    title: "",
+    content: "",
+    startDate: new Date().toISOString(),
+    endDate: new Date().toISOString(),
+    isCompleted: false,
+  };
+
+  // 컨텐츠 추가하기
+  const onCreateContentMutation = useMutation({
+    mutationFn: (newData: BoardContent) => {
+      // 기본으로 추가될 내용
+      const addContent = newData;
+      const updateContent = [...contents, addContent];
+      // 서버에 Row를 업데이트
+      return updateTodoId(Number(id), JSON.stringify(updateContent));
+    },
+    onSuccess: () => {
+      // 최종 데이터
+      toast.success("데이터 컨텐츠 업데이트 성공", {
+        description: "데이터 컨텐츠 업데이트에 성공하였습니다.",
+        duration: 3000,
+      });
+      refetch();
+    },
+    onError: (error) => {
+      toast.error("데이터 컨텐츠 업데이트 실패", {
+        description: `데이터 컨텐츠 업데이트에 실패하였습니다. ${error.message}`,
+        duration: 3000,
+      });
+    },
+  });
+
+  useEffect(() => {
+    // fetchGetTodoId();
+    refetch();
+    if (queryData) {
+      // 최종 데이터
+      toast.success("데이터 호출 성공", {
+        description: "데이터 호출에 성공하였습니다.",
+        duration: 3000,
+      });
+      setTitle(queryData.data?.title ? queryData.data.title : "");
+      setStartDate(
+        queryData.data?.start_date
+          ? new Date(queryData.data.start_date)
+          : new Date()
+      );
+      setEndDate(
+        queryData.data?.end_date
+          ? new Date(queryData.data.end_date)
+          : new Date()
+      );
+      const temp = queryData.data?.contents
+        ? JSON.parse(queryData.data.contents as string)
+        : [];
+      setContents(temp);
+      // 카운트
+      calcCompletedCount(temp);
+    }
+    if (error) {
+      toast.error("데이터 호출 실패", {
+        description: `데이터 호출에 실패하였습니다. ${error.message}`,
+        duration: 3000,
+      });
+    }
+  }, [queryData]);
+
   return (
-    <div>
-      <h1>Test Todo</h1>
-      <div className="flex gap-2">
-        <input
-          className="border px-3 py-1 rounded-sm"
-          type="text"
-          value={testInput}
-          placeholder="할 일을 입력해주세요."
-          onChange={(e) => setTestInput(e.target.value)}
-        />
-        <button
-          disabled={createMutation.isPending}
-          className="px-3 py-1 rounded-sm bg-amber-400 text-gray-800 hover:bg-amber-500 cursor-pointer"
-          onClick={() => createMutation.mutate()}
-        >
-          {createMutation.isPending ? "추가중.." : "할일추가"}
-        </button>
-      </div>
-      <div>
-        <button onClick={() => refetch()}>다시호출</button>
-      </div>
-      {isLoading && <div>데이터 로딩중 ...</div>}
-      {error && <div>Error : {error.message}</div>}
-      {data && (
-        <div>
-          {data.map((item, index) => (
-            <div key={index}>{item}</div>
-          ))}
+    <div className={styles.container}>
+      {/* board 메뉴 */}
+      <div className="absolute flex w-full items-center p-3">
+        <div className="flex-1">
+          <Button
+            variant={"outline"}
+            onClick={() => router.push("/")}
+            className="cursor-pointer"
+          >
+            <ChevronLeftIcon className="w-4 h-4" />
+          </Button>
         </div>
-      )}
+        <div className="flex gap-2">
+          <Button
+            variant={"outline"}
+            onClick={() => saveTitleMutation.mutate()}
+            disabled={saveTitleMutation.isPending}
+            className="cursor-pointer"
+          >
+            {saveTitleMutation.isPending ? "저장중..." : "저장"}
+          </Button>
+          <Button
+            variant={"outline"}
+            disabled={deleteBoardMutation.isPending}
+            onClick={() => deleteBoardMutation.mutate()}
+            className="cursor-pointer"
+          >
+            {deleteBoardMutation.isPending ? "삭제중..." : "삭제"}
+          </Button>
+        </div>
+      </div>
+      {/* 상단 */}
+      <header className={styles.container_header}>
+        <div className={styles.container_header_contents}>
+          <input
+            type="text"
+            placeholder="Enter Title Here"
+            className={styles.input}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+          {/* 진행율 */}
+          <div className={styles.progressBar}>
+            <span className={styles.progressBar_status}>
+              {completeCount}/{contents.length} completed!
+            </span>
+            {/* Progress 컴포넌트 배치 */}
+            <Progress
+              value={totalCount}
+              className="w-[30%] h-2"
+              indicateColor="bg-orange-500"
+            />
+          </div>
+          {/* 캘린더 선택 추가 */}
+          <div className={styles.calendarBox}>
+            <div className={styles.calendarBox_calendar}>
+              <LabelCalendar
+                label="From"
+                selectedDate={startDate as Date}
+                onDateChange={setStartDate}
+                required={false}
+              />
+              <LabelCalendar
+                label="To"
+                selectedDate={endDate as Date}
+                onDateChange={setEndDate}
+                required={true}
+              />
+            </div>
+            <Button
+              variant={"outline"}
+              className="w-[15%] text-white bg-orange-400 border-orange-500 hover:bg-orange-400 hover:text-white cursor-pointer"
+              onClick={() => onCreateContentMutation.mutate(initData)}
+            >
+              Add New Board
+            </Button>
+          </div>
+        </div>
+      </header>
+      {/* 본문 */}
+      <div className={styles.container_body}>
+        {/* contents 배열의 개수만큼 출력이 되어야 함 */}
+        {contents.length === 0 ? (
+          <div className={styles.container_body_infoBox}>
+            <span className={styles.title}>There is no board yet.</span>
+            <span className={styles.subTitle}>
+              Click the button and start flashing!
+            </span>
+            <button
+              className={styles.button}
+              onClick={() => onCreateContentMutation.mutate(initData)}
+            >
+              <Image
+                src="/assets/images/round-button.svg"
+                alt="add board"
+                width={100}
+                height={100}
+              />
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-start w-full h-full gap-4 overflow-y-scroll">
+            {contents.map((item) => (
+              <BasicBoard
+                key={item.boardId}
+                item={item}
+                updateContent={updateContentMutation.mutate}
+                deleteContent={deleteContentMutation.mutate}
+                fetchGetTodoId={fetchGetTodoId}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
-};
+}
+
 export default Page;
-```
-
-### 6.1. onSuccess
-
-- 성공 시 실행될 함수
-
-```tsx
-const createMutation = useMutation({
-  onSuccess: () => {
-    setTestInput("");
-    refetch();
-  },
-});
-```
-
-### 6.2. onError
-
-- 실패 시 실행될 함수
-
-```tsx
-const createMutation = useMutation({
-  onError: (error) => {
-    console.log("Error : 데이터 추가 실패");
-    console.log(error.message);
-  },
-});
-```
-
-### 6.3. onSettled
-
-- 성공, 실패 상관없이 무조건 실행
-
-```tsx
-const createMutation = useMutation({
-  onSettled: () => {
-    console.log("무조건 처리해야 하는 함수");
-  },
-});
-```
-
-### 6.4. mutateAsync 비동기 실행
-
-```tsx
-// mutateAsync 비동기 실행 예제
-const mutation = useMutation({
-  mutationFn: createTodos,
-});
-```
-
-```tsx
-const handleAdd = async () => {
-  try {
-    const now = await mutation.mutateAsync("추가요");
-    console.log("데이터", now);
-    queryClient.refetchQueries({ queryKey: ["unique"] });
-  } catch (error) {
-    console.log(error);
-  }
-};
-```
-
-```tsx
-<div>
-  <Button onClick={() => handleAdd()}>테스트</Button>
-</div>
 ```

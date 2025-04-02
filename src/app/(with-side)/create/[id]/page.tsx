@@ -22,6 +22,8 @@ import Image from "next/image";
 import { ChevronLeftIcon } from "lucide-react";
 import { useAtom } from "jotai";
 import { sidebarStateAtom } from "@/app/store";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/providers/ReactQueryProvider";
 
 // contents 배열에 대한 타입정의
 interface BoardContent {
@@ -48,70 +50,107 @@ function Page() {
   const [completeCount, setCompleteCount] = useState<number>(0);
   const [totalCount, setTotalCount] = useState<number>(0);
 
-  // Page 삭제 함수
-  const handleDeleteBoard = async () => {
-    const { error, status } = await deleteTodo(Number(id));
+  // id에 해당하는 Row 데이터를 읽어오기
+  const {
+    error,
+    data: queryData,
+    refetch,
+  } = useQuery({
+    queryKey: ["todos"],
+    queryFn: () => getTodoId(Number(id)),
+  });
 
-    if (error) {
+  // Page 삭제 함수
+  const deleteBoardMutation = useMutation({
+    mutationFn: () => {
+      return deleteTodo(Number(id));
+    },
+    onSuccess: () => {
+      toast.success("Todo 삭제 성공", {
+        description: "Todo 삭제에 성공하였습니다.",
+        duration: 3000,
+      });
+      setSidebarState("delete");
+      router.push("/");
+    },
+    onError: (error) => {
       toast.error("Todo 삭제 실패", {
         description: `Todo 삭제에 실패하였습니다. ${error.message}`,
         duration: 3000,
       });
-      return;
-    }
-
-    toast.success("Todo 삭제 성공", {
-      description: "Todo 삭제에 성공하였습니다.",
-      duration: 3000,
-    });
-    setSidebarState("delete");
-    router.push("/");
-  };
+    },
+  });
 
   // 타이틀 저장 함수
-  const handleSaveTitle = async () => {
-    const { data, error, status } = await updateTodoIdTitle(
-      Number(id),
-      title,
-      startDate as Date,
-      endDate as Date
-    );
-    // jotai의 State 갱신
-    setSidebarState("titleChange");
-  };
+  const saveTitleMutation = useMutation({
+    mutationFn: () => {
+      return updateTodoIdTitle(
+        Number(id),
+        title,
+        startDate as Date,
+        endDate as Date
+      );
+    },
+    onSuccess: () => {
+      toast.success("타이틀 수정 성공", {
+        description: "타이틀 수정에 성공하였습니다.",
+        duration: 3000,
+      });
+
+      // jotai의 State 갱신
+      setSidebarState("titleChange");
+    },
+    onError: (error) => {
+      toast.error("타이틀 수정 실패", {
+        description: `타이틀 수정에 실패하였습니다. ${error.message}`,
+        duration: 3000,
+      });
+    },
+  });
 
   // 컨텐츠 삭제 함수
-  const deleteContent = async (deleteBoardId: string) => {
-    // console.log("삭제할 컨텐츠 boardId", deleteBoardId);
-    const tempContentArr = contents.filter(
-      (item) => item.boardId !== deleteBoardId
-    );
-    // 서버에 Row를 업데이트
-    const { data, error, status } = await updateTodoId(
-      Number(id),
-      JSON.stringify(tempContentArr)
-    );
+  const deleteContentMutation = useMutation({
+    mutationFn: (deleteBoardId: string) => {
+      const tempContentArr = contents.filter(
+        (item) => item.boardId !== deleteBoardId
+      );
 
-    fetchGetTodoId();
-  };
+      // 서버에 Row를 업데이트
+      return updateTodoId(Number(id), JSON.stringify(tempContentArr));
+    },
+    onSuccess: () => {
+      refetch();
+    },
+    onError: (error) => {
+      console.log(error);
+    },
+  });
 
   // 컨텐츠 데이터 업데이트 함수
-  const updateContent = async (newData: BoardContent) => {
-    console.log("최종전달", newData);
+  const updateContentMutation = useMutation({
+    mutationFn: (newData: BoardContent) => {
+      const newContentArr = contents.map((item) => {
+        if (item.boardId === newData.boardId) {
+          return newData;
+        }
+        return item;
+      });
 
-    const newContentArr = contents.map((item) => {
-      if (item.boardId === newData.boardId) {
-        return newData;
-      }
-      return item;
-    });
-    // 서버에 Row를 업데이트
-    const { data, error, status } = await updateTodoId(
-      Number(id),
-      JSON.stringify(newContentArr)
-    );
+      return updateTodoId(Number(id), JSON.stringify(newContentArr));
+    },
+    onSuccess: () => {
+      refetch();
+    },
+    onError: (error) => {
+      console.log(error);
+    },
+  });
 
-    fetchGetTodoId();
+  // contents의 isCompleted가 true인 개수 파악하기
+  const calcCompletedCount = (temp: BoardContent[]) => {
+    const arr = temp.filter((item) => item.isCompleted === true);
+    setCompleteCount(arr.length);
+    setTotalCount((arr.length / temp.length) * 100);
   };
 
   // id에 해당하는 Row 데이터를 읽어오기
@@ -140,57 +179,75 @@ function Page() {
     calcCompletedCount(temp);
   };
 
-  // contents의 isCompleted가 true인 개수 파악하기
-  const calcCompletedCount = (temp: BoardContent[]) => {
-    const arr = temp.filter((item) => item.isCompleted === true);
-    setCompleteCount(arr.length);
-    setTotalCount((arr.length / temp.length) * 100);
+  // 컨텐츠 추가하기
+  const initData: BoardContent = {
+    boardId: nanoid(),
+    title: "",
+    content: "",
+    startDate: new Date().toISOString(),
+    endDate: new Date().toISOString(),
+    isCompleted: false,
   };
 
   // 컨텐츠 추가하기
-  const onCreateContent = async (newData?: BoardContent) => {
-    // 기본으로 추가될 내용
-    const addContent = newData
-      ? { ...newData }
-      : {
-          boardId: nanoid(),
-          title: "",
-          content: "",
-          startDate: new Date().toISOString(),
-          endDate: new Date().toISOString(),
-          isCompleted: false,
-        };
-
-    const updateContent = [...contents, addContent];
-    // 서버에 Row를 업데이트
-    console.log(updateContent);
-    const { data, error, status } = await updateTodoId(
-      Number(id),
-      JSON.stringify(updateContent)
-    );
-
-    // 에러 발생 시
-    if (error) {
+  const onCreateContentMutation = useMutation({
+    mutationFn: (newData: BoardContent) => {
+      // 기본으로 추가될 내용
+      const addContent = newData;
+      const updateContent = [...contents, addContent];
+      // 서버에 Row를 업데이트
+      return updateTodoId(Number(id), JSON.stringify(updateContent));
+    },
+    onSuccess: () => {
+      // 최종 데이터
+      toast.success("데이터 컨텐츠 업데이트 성공", {
+        description: "데이터 컨텐츠 업데이트에 성공하였습니다.",
+        duration: 3000,
+      });
+      refetch();
+    },
+    onError: (error) => {
       toast.error("데이터 컨텐츠 업데이트 실패", {
         description: `데이터 컨텐츠 업데이트에 실패하였습니다. ${error.message}`,
         duration: 3000,
       });
-      return;
-    }
-
-    // 최종 데이터
-    toast.success("데이터 컨텐츠 업데이트 성공", {
-      description: "데이터 컨텐츠 업데이트에 성공하였습니다.",
-      duration: 3000,
-    });
-
-    // 자료 새로 호출
-    fetchGetTodoId();
-  };
+    },
+  });
 
   useEffect(() => {
-    fetchGetTodoId();
-  }, []);
+    // fetchGetTodoId();
+    refetch();
+    if (queryData) {
+      // 최종 데이터
+      toast.success("데이터 호출 성공", {
+        description: "데이터 호출에 성공하였습니다.",
+        duration: 3000,
+      });
+      setTitle(queryData.data?.title ? queryData.data.title : "");
+      setStartDate(
+        queryData.data?.start_date
+          ? new Date(queryData.data.start_date)
+          : new Date()
+      );
+      setEndDate(
+        queryData.data?.end_date
+          ? new Date(queryData.data.end_date)
+          : new Date()
+      );
+      const temp = queryData.data?.contents
+        ? JSON.parse(queryData.data.contents as string)
+        : [];
+      setContents(temp);
+      // 카운트
+      calcCompletedCount(temp);
+    }
+    if (error) {
+      toast.error("데이터 호출 실패", {
+        description: `데이터 호출에 실패하였습니다. ${error.message}`,
+        duration: 3000,
+      });
+    }
+  }, [queryData]);
 
   return (
     <div className={styles.container}>
@@ -208,17 +265,19 @@ function Page() {
         <div className="flex gap-2">
           <Button
             variant={"outline"}
-            onClick={handleSaveTitle}
+            onClick={() => saveTitleMutation.mutate()}
+            disabled={saveTitleMutation.isPending}
             className="cursor-pointer"
           >
-            저장
+            {saveTitleMutation.isPending ? "저장중..." : "저장"}
           </Button>
           <Button
             variant={"outline"}
-            onClick={handleDeleteBoard}
+            disabled={deleteBoardMutation.isPending}
+            onClick={() => deleteBoardMutation.mutate()}
             className="cursor-pointer"
           >
-            삭제
+            {deleteBoardMutation.isPending ? "삭제중..." : "삭제"}
           </Button>
         </div>
       </div>
@@ -263,7 +322,7 @@ function Page() {
             <Button
               variant={"outline"}
               className="w-[15%] text-white bg-orange-400 border-orange-500 hover:bg-orange-400 hover:text-white cursor-pointer"
-              onClick={() => onCreateContent()}
+              onClick={() => onCreateContentMutation.mutate(initData)}
             >
               Add New Board
             </Button>
@@ -279,7 +338,10 @@ function Page() {
             <span className={styles.subTitle}>
               Click the button and start flashing!
             </span>
-            <button className={styles.button} onClick={() => onCreateContent()}>
+            <button
+              className={styles.button}
+              onClick={() => onCreateContentMutation.mutate(initData)}
+            >
               <Image
                 src="/assets/images/round-button.svg"
                 alt="add board"
@@ -294,8 +356,8 @@ function Page() {
               <BasicBoard
                 key={item.boardId}
                 item={item}
-                updateContent={updateContent}
-                deleteContent={deleteContent}
+                updateContent={updateContentMutation.mutate}
+                deleteContent={deleteContentMutation.mutate}
                 fetchGetTodoId={fetchGetTodoId}
               />
             ))}

@@ -5,37 +5,36 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { createTodo } from "@/app/actions/todos-action";
 import { toast } from "sonner";
+// Mutation
+import { useMutation } from "@tanstack/react-query";
 
 function Home() {
   const router = useRouter();
 
   // create
-  const onCreate = async () => {
-    const { data, error, status } = await createTodo({
-      title: "",
-      contents: JSON.stringify([]),
-      start_date: new Date().toISOString(),
-      end_date: new Date().toISOString(),
-    });
-    if (error) {
+  const createMutation = useMutation({
+    mutationFn: () =>
+      createTodo({
+        title: "",
+        contents: JSON.stringify([]),
+        start_date: new Date().toISOString(),
+        end_date: new Date().toISOString(),
+      }),
+    onSuccess: (data) => {
+      toast.success("데이터 추가 성공", {
+        description: "데이터 추가에 성공하였습니다.",
+        duration: 3000,
+      });
+
+      router.push(`/create/${data.data.id}`);
+    },
+    onError: (error) => {
       toast.error("데이터 추가 실패", {
         description: `데이터 추가에 실패하였습니다. ${error.message}`,
         duration: 3000,
       });
-      return;
-    }
-
-    // 최종 데이터
-    toast.success("데이터 추가 성공", {
-      description: "데이터 추가에 성공하였습니다.",
-      duration: 3000,
-    });
-    console.log("등록된 id", data.id);
-
-    // 데이터 추가 성공 시 할 일 등록페이지로 이동시킴
-    // http://localhost:3000/create/[data.id] 로 이동
-    router.push(`/create/${data.id}`);
-  };
+    },
+  });
 
   return (
     <div className={styles.container}>
@@ -49,9 +48,10 @@ function Home() {
         <Button
           variant={"outline"}
           className="w-full bg-transparent text-orange-500 border-orange-400 hover:bg-orange-50 hover:text-orange-500"
-          onClick={onCreate}
+          disabled={createMutation.isPending}
+          onClick={() => createMutation.mutate()}
         >
-          Add New page
+          {createMutation.isPending ? "Add..." : "Add New page"}
         </Button>
       </div>
     </div>
