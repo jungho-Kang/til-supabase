@@ -104,7 +104,7 @@ export default eslintConfig;
 - https://cloud.google.com/developers?hl=ko
 - `콘솔`로 이동
 - `프로젝트` 선택
-- `API 및 서비스` → `OAuth 동의 화면` → `클라이언트` → `해당 클라이언트 선택`
+- `API 및 서비스` → `OAuth 동의 화면` → `클라이언트` → `목록 중 해당 클라이언트 선택`
 - `승인된 리디렉션 URI`에 `https://til-supabase-three.vercel.app` (vercel 주소) 추가
 
 # 네이버 서치 어드바이저 등록하기
@@ -173,3 +173,8 @@ Sitemap: https://til-supabase-three.vercel.app/sitemap.xml
 <url><loc>https://til-supabase-three.vercel.app/create</loc><lastmod>2023-09-11T23:52:17.732Z</lastmod><changefreq>todos</changefreq><priority>0.7</priority></url>
 </urlset>
 ```
+
+- git push 이후 robots.txt 수집 요청 실행
+- 웹마스터 도구 → 간단체크 → `url 입력`
+
+# 구글 서치 등록하기
