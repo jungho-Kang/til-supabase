@@ -1,9 +1,10 @@
-import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
 import "./globals.css";
 // shadcn/ui
 import { Toaster } from "@/components/ui/sonner";
 import ReactQueryProvider from "@/providers/ReactQueryProvider";
+// SEO
+import type { Metadata } from "next";
 
 const roboto = Roboto({
   variable: "--font-roboto",
@@ -14,6 +15,11 @@ const roboto = Roboto({
 export const metadata: Metadata = {
   title: "Todo",
   description: "Todo Supabase",
+  openGraph: {
+    title: "Todo",
+    description: "Todo Supabase",
+    images: [{ url: "/thumnail.png" }],
+  },
 };
 
 export default function RootLayout({

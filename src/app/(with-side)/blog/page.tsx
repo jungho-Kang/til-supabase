@@ -1,10 +1,10 @@
 "use client";
-import Link from "next/link";
-import { useEffect, useState } from "react";
 import { BlogRow, deleteBlog, getBlogs } from "@/app/actions/blog-action";
 import { Button } from "@/components/ui/button";
 import { Trash } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 function Page() {
   const [blogs, setBlogs] = useState<BlogRow[] | null>([]);
