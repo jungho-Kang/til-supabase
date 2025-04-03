@@ -178,3 +178,30 @@ Sitemap: https://til-supabase-three.vercel.app/sitemap.xml
 - 웹마스터 도구 → 간단체크 → `url 입력`
 
 # 구글 서치 등록하기
+
+- https://search.google.com/search-console/about
+
+```html
+<meta
+  name="google-site-verification"
+  content="LLO8aYdx-tfUeFtCRV9IcnB1fwdyU_oxUv6mXXSBiUc"
+/>
+```
+
+- /src/app/layout.tsx
+
+```tsx
+export const metadata: Metadata = {
+  title: "Todo",
+  description: "Todo Supabase",
+  openGraph: {
+    title: "Todo",
+    description: "Todo Supabase",
+    images: [{ url: "/thumnail.png" }],
+  },
+  other: {
+    "naver-site-verification": "75d0ebd7ba50c42db041df212eec136177627ba6",
+    "google-site-verification": "LLO8aYdx-tfUeFtCRV9IcnB1fwdyU_oxUv6mXXSBiUc",
+  },
+};
+```
