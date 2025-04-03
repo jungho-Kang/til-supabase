@@ -6,23 +6,32 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/";
 
-  // console.log("code", code);
-  // console.log("next", next);
   if (code) {
     const supabase = await createServerSideClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
-      const forwardedHost = request.headers.get("x-forwarded-host");
-      const isLocalEnv = process.env.NODE_ENV === "development";
-      if (isLocalEnv) {
-        return NextResponse.redirect(`${origin}${next}`);
-      } else if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${next}`);
-      } else {
-        return NextResponse.redirect(`${origin}${next}`);
-      }
+
+    if (error) {
+      // 여기가 추가된 에러 메시지 반환 부분입니다
+      return new Response("❌ Supabase 인증 에러: " + error.message, {
+        status: 500,
+      });
+    }
+
+    // 성공 시 정상 리디렉션 처리
+    const forwardedHost = request.headers.get("x-forwarded-host");
+    const isLocalEnv = process.env.NODE_ENV === "development";
+
+    if (isLocalEnv) {
+      return NextResponse.redirect(`${origin}${next}`);
+    } else if (forwardedHost) {
+      return NextResponse.redirect(`https://${forwardedHost}${next}`);
+    } else {
+      return NextResponse.redirect(`${origin}${next}`);
     }
   }
 
-  return NextResponse.redirect(`${origin}/auth/auth-code-error`);
+  // code 값 자체가 없는 경우
+  return new Response("❌ 인증 코드 없음 (Missing ?code=)", {
+    status: 400,
+  });
 }
