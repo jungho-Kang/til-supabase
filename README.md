@@ -120,16 +120,16 @@ export default eslintConfig;
 />
 ```
 
-- /src/app/(with-side)/layout.tsx
+- /src/app/layout.tsx
 
 ```tsx
 export const metadata: Metadata = {
-  title: "Blog",
-  description: "Blog Supabase",
+  title: "Todo",
+  description: "Todo Supabase",
   openGraph: {
-    title: "Blog",
-    description: "Blog Supabase",
-    images: [{ url: "/thumbnail.png" }],
+    title: "Todo",
+    description: "Todo Supabase",
+    images: [{ url: "/thumnail.png" }],
   },
   other: {
     "naver-site-verification": "75d0ebd7ba50c42db041df212eec136177627ba6",

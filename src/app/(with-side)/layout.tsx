@@ -13,9 +13,6 @@ export const metadata: Metadata = {
     description: "Blog Supabase",
     images: [{ url: "/thumbnail.png" }],
   },
-  other: {
-    "naver-site-verification": "75d0ebd7ba50c42db041df212eec136177627ba6",
-  },
 };
 
 export default async function Layout({ children }: { children: ReactNode }) {
