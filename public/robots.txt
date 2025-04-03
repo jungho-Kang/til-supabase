@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://til-supabase-three.vercel.app
+
+# Sitemaps
+Sitemap: https://til-supabase-three.vercel.app/sitemap.xml

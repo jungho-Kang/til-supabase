@@ -110,7 +110,7 @@ export default eslintConfig;
 # 네이버 서치 어드바이저 등록하기
 
 - https://searchadvisor.naver.com/
-- [`웹 마스터 도구`](https://searchadvisor.naver.com/console/board)
+- [웹마스터 도구](https://searchadvisor.naver.com/console/board)
 - `사이트 소유확인` → `HTML 태그`에서 메타 태그 복사하기
 
 ```html
@@ -135,4 +135,41 @@ export const metadata: Metadata = {
     "naver-site-verification": "75d0ebd7ba50c42db041df212eec136177627ba6",
   },
 };
+```
+
+- `소유권 확인` 성공 시 실행
+- `웹마스터 도구` → `요약` → `검증` → `robots.txt` 이동
+
+## /public/robots.txt 파일 생성
+
+```txt
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://til-supabase-three.vercel.app
+
+# Sitemaps
+Sitemap: https://til-supabase-three.vercel.app/sitemap.xml
+```
+
+## /public/sitemap.xml 파일 생성
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<sitemap><loc>https://til-supabase-three.vercel.app/sitemap-0.xml</loc></sitemap>
+</sitemapindex>
+```
+
+## /public/sitemap-0.xml 파일 생성
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:mobile="http://www.google.com/schemas/sitemap-mobile/1.0" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
+<url><loc>https://til-supabase-three.vercel.app</loc><lastmod>2023-09-11T23:52:17.732Z</lastmod><changefreq>todos</changefreq><priority>0.7</priority></url>
+<url><loc>https://til-supabase-three.vercel.app/blog</loc><lastmod>2023-09-11T23:52:17.732Z</lastmod><changefreq>blog</changefreq><priority>0.7</priority></url>
+<url><loc>https://til-supabase-three.vercel.app/create</loc><lastmod>2023-09-11T23:52:17.732Z</lastmod><changefreq>todos</changefreq><priority>0.7</priority></url>
+</urlset>
 ```
