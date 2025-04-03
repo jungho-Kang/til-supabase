@@ -98,3 +98,41 @@ const eslintConfig = [
 
 export default eslintConfig;
 ```
+
+## 구글 로그인 Redirects 처리
+
+- https://cloud.google.com/developers?hl=ko
+- `콘솔`로 이동
+- `프로젝트` 선택
+- `API 및 서비스` → `OAuth 동의 화면` → `클라이언트` → `해당 클라이언트 선택`
+- `승인된 리디렉션 URI`에 `https://til-supabase-three.vercel.app` (vercel 주소) 추가
+
+# 네이버 서치 어드바이저 등록하기
+
+- https://searchadvisor.naver.com/
+- [`웹 마스터 도구`](https://searchadvisor.naver.com/console/board)
+- `사이트 소유확인` → `HTML 태그`에서 메타 태그 복사하기
+
+```html
+<meta
+  name="naver-site-verification"
+  content="75d0ebd7ba50c42db041df212eec136177627ba6"
+/>
+```
+
+- /src/app/(with-side)/layout.tsx
+
+```tsx
+export const metadata: Metadata = {
+  title: "Blog",
+  description: "Blog Supabase",
+  openGraph: {
+    title: "Blog",
+    description: "Blog Supabase",
+    images: [{ url: "/thumbnail.png" }],
+  },
+  other: {
+    "naver-site-verification": "75d0ebd7ba50c42db041df212eec136177627ba6",
+  },
+};
+```
